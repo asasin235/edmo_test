@@ -913,23 +913,30 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 8px 24px 16px;
+  gap: 16px;
+  padding: 12px 24px 20px;
   background: rgba(15, 23, 42, 0.5);
 }
 
 .mute-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 8px;
+  padding: 10px 18px;
   background: rgba(99, 102, 241, 0.15);
   border: 1px solid rgba(99, 102, 241, 0.3);
-  border-radius: 20px;
+  border-radius: 24px;
   color: #a5b4fc;
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.mute-btn svg {
+  flex-shrink: 0;
 }
 
 .mute-btn:hover {
@@ -956,17 +963,24 @@ body {
 }
 
 .stop-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 8px;
+  padding: 10px 18px;
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 20px;
+  border-radius: 24px;
   color: #fca5a5;
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.stop-btn svg {
+  flex-shrink: 0;
 }
 
 .stop-btn:hover {
