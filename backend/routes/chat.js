@@ -152,17 +152,21 @@ router.post('/', async (req, res) => {
     messageOperations.create(aiMessageId, activeConversationId, 'assistant', aiResponse);
 
     // Try to extract name from the message if this is early in the conversation
-    if (userMessageCount <= 2 && !user.name) {
-      // Simple heuristic to extract name
+    if (userMessageCount <= 3 && !user.name) {
+      // Improved heuristics to extract name
       const namePatterns = [
-        /(?:my name is|i'm|i am|call me)\s+([A-Za-z]+)/i,
-        /^([A-Za-z]+)$/i  // If they just respond with a single word, it might be their name
+        /(?:my name is|i'm|i am|call me|this is|it's|its)\s+([A-Za-z]+)/i,
+        /(?:name'?s?)\s+([A-Za-z]+)/i,
+        /^(?:hi,?\s*)?(?:i'?m?\s+)?([A-Za-z]{2,})[.!]?$/i,  // "Hi, Aatif" or just "Aatif"
+        /^([A-Za-z]{2,})(?:\s+here)?[.!]?$/i  // "Aatif here"
       ];
       
       for (const pattern of namePatterns) {
-        const match = message.match(pattern);
-        if (match && match[1] && match[1].length > 1) {
-          userOperations.updateName(userId, match[1]);
+        const match = message.trim().match(pattern);
+        if (match && match[1] && match[1].length >= 2) {
+          // Capitalize first letter
+          const name = match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
+          userOperations.updateName(userId, name);
           break;
         }
       }

@@ -157,7 +157,11 @@ function formatDate(dateStr) {
 // Get student display name
 function getStudentName(student) {
   if (student.name) return student.name;
-  if (student.email) return student.email.split('@')[0];
+  if (student.email) {
+    // Capitalize email username as fallback
+    const username = student.email.split('@')[0];
+    return username.charAt(0).toUpperCase() + username.slice(1);
+  }
   return `Student ${student.userId.slice(0, 8)}...`;
 }
 </script>
