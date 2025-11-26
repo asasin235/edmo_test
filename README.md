@@ -1,240 +1,252 @@
 # Student Profile Assistant
 
-An AI-powered student interview system that collects student information through conversational interviews and generates comprehensive report cards. Built with Vue.js frontend and Node.js/Express backend, featuring voice and text input capabilities.
+An AI-powered student interview system that collects student information through conversational interviews and generates comprehensive report cards. Built with Vue.js frontend and Node.js/Express backend, featuring voice input, text-to-speech responses, and an admin dashboard.
 
-## Features
+---
 
-- **Voice Input**: Speak your responses using the microphone button - transcription appears in the text box for review before sending
-- **Text Input**: Type your responses with real-time AI interaction
-- **Smart Interview Flow**: AI asks structured questions about education, personality, interests, learning style, and goals
-- **Student Report Card**: Generates a detailed report card with:
-  - Student profile (name, education, institution)
-  - Personality insights
-  - Learning profile and style
-  - Strengths and growth areas
-  - Interests and hobbies
-  - Short-term and long-term goals
-  - Personalized recommendations
-- **Context Persistence**: All conversations are stored and context is maintained
+## 🚀 How to Run
 
-## Architecture
-
-```
-┌─────────────────────┐     ┌─────────────────────┐
-│   Vue.js Frontend   │────▶│  Express Backend    │
-│                     │     │                     │
-│  - Voice Input      │     │  - Chat API         │
-│  - Text Input       │     │  - Report Card API  │
-│  - Chat Interface   │     │  - OpenAI Service   │
-│  - Report Card UI   │     │  - SQLite Database  │
-└─────────────────────┘     └─────────────────────┘
-```
-
-## Prerequisites
-
+### Prerequisites
 - Node.js 18+ installed
 - OpenAI API key
 
-## Quick Start
+### Quick Start (3 Steps)
 
-### 1. Setup Backend
-
+**Step 1: Setup Backend**
 ```bash
 cd backend
-
-# Copy environment file and add your OpenAI API key
 cp .env.example .env
-# Edit .env and replace 'your_openai_api_key_here' with your actual key
-
-# Install dependencies
+# Edit .env and add your OpenAI API key and admin password
 npm install
-
-# Start the server
 npm start
 ```
 
-The backend will start on `http://localhost:3000`
-
-### 2. Setup Frontend
-
+**Step 2: Setup Frontend**
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
 ```
 
-The frontend will start on `http://localhost:5173`
+**Step 3: Open the App**
+- Navigate to `http://localhost:5173` in your browser
+- Enter your email to start the interview
+- Admin panel: `http://localhost:5173/#/admin` (password required)
 
-### 3. Open the Application
+---
 
-Navigate to `http://localhost:5173` in Chrome (recommended for voice support).
+## ✨ Features
 
-## How It Works
+### User Features
+- **Email-Based Identification**: Enter your email to start or continue your interview session
+- **Voice Input**: Speak your responses using OpenAI Whisper API - transcription appears in text box for review
+- **Text Input**: Type your responses with real-time AI interaction
+- **AI Voice Responses**: AI speaks its responses aloud (with mute/unmute control)
+- **Smart Interview Flow**: AI asks structured questions (configurable count) about education, personality, interests, and goals
+- **Student Report Card**: Generates a detailed report card with personality insights, learning style, strengths, and recommendations
 
-### Interview Flow
+### Admin Features
+- **Password-Protected Admin Panel**: Secure access to admin dashboard
+- **Student Management**: View all students with email, session count, and last active time
+- **View Student Reports**: See detailed report cards for any student
+- **PDF Download**: Download student reports as PDF documents
+- **Configurable Settings**: Adjust the number of interview questions
+- **IST Time Display**: All timestamps shown in Indian Standard Time
 
-The AI conducts a friendly, conversational interview covering:
+---
 
-1. **Basic Information**: Name, age, education level, school/college
-2. **Academic Profile**: Favorite subjects, challenging subjects, academic goals
-3. **Personality & Interests**: Hobbies, extracurricular activities, strengths
-4. **Learning Style**: Study preferences, ideal environment, time management
-5. **Goals & Aspirations**: Short-term goals, long-term dreams, career aspirations
+## 🏗️ Architecture
 
-### Voice Input
+```
+┌─────────────────────────┐     ┌─────────────────────────┐
+│    Vue.js Frontend      │────▶│    Express Backend      │
+│                         │     │                         │
+│  - Email Login          │     │  - Chat API             │
+│  - Voice Input (Whisper)│     │  - Report Card API      │
+│  - Text-to-Speech       │     │  - Admin API            │
+│  - Chat Interface       │     │  - Transcription API    │
+│  - Report Card UI       │     │  - OpenAI Integration   │
+│  - Admin Dashboard      │     │  - SQLite Database      │
+└─────────────────────────┘     └─────────────────────────┘
+```
 
-1. Click the microphone button to start recording
-2. Speak your response
-3. The transcription appears in the text box
-4. Review/edit if needed, then click send
+---
 
-### Report Card Generation
+## 📖 How It Works
 
-Click "Report Card" to generate a comprehensive student profile including:
-- Personality insights extracted from the conversation
-- Learning style analysis
-- Identified strengths and growth areas
-- Personalized recommendations based on the student's profile
+### User Flow
 
-## API Documentation
+1. **Enter Email**: Users enter their email to start or continue their session
+2. **Interview**: AI conducts a friendly interview covering:
+   - Basic Information (name, age, education)
+   - Academic Profile (subjects, goals)
+   - Personality & Interests
+   - Learning Style
+   - Goals & Aspirations
+3. **Voice/Text Input**: Users can speak (transcribed by Whisper) or type responses
+4. **AI Speaks**: Responses are spoken aloud (can be muted)
+5. **Report Card**: After completing the interview, view your personalized report card
+
+### Admin Flow
+
+1. Navigate to `/#/admin` or click "Admin" button
+2. Enter admin password (set in `.env` file)
+3. View all students and their interview data
+4. Download PDF reports for any student
+5. Configure interview settings
+
+---
+
+## 🔌 API Documentation
+
+### POST /api/chat/start
+Start a session with email identification.
+
+```json
+// Request
+{ "email": "student@example.com" }
+
+// Response
+{
+  "userId": "uuid",
+  "email": "student@example.com",
+  "name": "John",
+  "isNewUser": false,
+  "questionCount": 8
+}
+```
 
 ### POST /api/chat
-
 Send a message and receive an AI response.
 
-**Request:**
 ```json
+// Request
 {
   "userId": "user-123",
   "message": "My name is John",
   "conversationId": "optional-conversation-id"
 }
+
+// Response
+{
+  "response": "Nice to meet you, John! What grade are you in?",
+  "conversationId": "conv-abc123",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "questionProgress": { "current": 1, "total": 8 }
+}
 ```
 
-**Response:**
+### POST /api/transcribe
+Transcribe audio using OpenAI Whisper.
+
 ```json
-{
-  "response": "Nice to meet you, John! What grade or year are you currently in?",
-  "conversationId": "conv-abc123",
-  "timestamp": "2024-01-15T10:30:00.000Z"
-}
+// Request
+{ "audio": "base64-encoded-audio-data" }
+
+// Response
+{ "text": "Transcribed text here" }
 ```
 
 ### GET /api/report/:userId
-
 Get a comprehensive student report card.
 
-**Response:**
-```json
-{
-  "userId": "user-123",
-  "reportCard": {
-    "studentProfile": {
-      "name": "John",
-      "age": "16",
-      "educationLevel": "High School",
-      "institution": "Lincoln High",
-      "favoriteSubjects": ["Math", "Science"],
-      "challengingSubjects": ["History"]
-    },
-    "personalityInsights": ["Curious and eager to learn", "Strong analytical thinking"],
-    "learningProfile": {
-      "preferredStyle": "Visual",
-      "studyPreferences": "Prefers quiet environment with notes",
-      "idealEnvironment": "Library or quiet room"
-    },
-    "strengths": ["Problem-solving", "Mathematics"],
-    "growthAreas": ["Public speaking", "Time management"],
-    "interests": ["Gaming", "Robotics"],
-    "goals": {
-      "shortTerm": "Improve grades in History",
-      "longTerm": "Become a software engineer",
-      "careerAspiration": "Work at a tech company"
-    },
-    "recommendations": [
-      "Consider joining the robotics club",
-      "Try visual learning tools for History"
-    ],
-    "overallSummary": "John is a bright student with strong STEM abilities..."
-  },
-  "conversations": [...],
-  "totalMessages": 24,
-  "generatedAt": "2024-01-15T11:00:00.000Z"
-}
-```
+### Admin Endpoints (requires `X-Admin-Password` header)
+- `POST /api/admin/login` - Verify admin password
+- `GET /api/admin/settings` - Get all settings
+- `PUT /api/admin/settings` - Update settings
+- `GET /api/admin/students` - List all students
+- `GET /api/admin/students/:userId/report` - Get student report
+- `GET /api/admin/students/:userId/pdf` - Download PDF report
 
-### GET /health
+---
 
-Health check endpoint.
-
-## Environment Variables
+## ⚙️ Environment Variables
 
 ### Backend (.env)
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `OPENAI_API_KEY` | Your OpenAI API key | Required |
+| `ADMIN_PASSWORD` | Admin panel password | Required |
 | `PORT` | Server port | 3000 |
-| `DATABASE_PATH` | SQLite database file path | ./database.sqlite |
+| `DATABASE_PATH` | SQLite database path | ./database.sqlite |
 
-## Project Structure
+### Example .env file
+```
+OPENAI_API_KEY=sk-your-openai-api-key
+ADMIN_PASSWORD=your-secure-password
+PORT=3000
+DATABASE_PATH=./database.sqlite
+```
+
+---
+
+## 📁 Project Structure
 
 ```
 edmo_project/
 ├── backend/
-│   ├── server.js           # Express server entry point
-│   ├── database.js         # SQLite database setup & operations
+│   ├── server.js              # Express server entry point
+│   ├── database.js            # SQLite database setup & operations
 │   ├── package.json
 │   ├── .env.example
 │   ├── routes/
-│   │   ├── chat.js         # Chat API endpoints
-│   │   └── report.js       # Report Card API endpoints
+│   │   ├── chat.js            # Chat API endpoints
+│   │   ├── report.js          # Report Card API endpoints
+│   │   ├── admin.js           # Admin API endpoints
+│   │   └── transcribe.js      # Whisper transcription endpoint
 │   └── services/
-│       └── openai.js       # OpenAI integration with interview prompts
+│       └── openai.js          # OpenAI integration
 │
 ├── frontend/
 │   ├── index.html
 │   ├── package.json
 │   └── src/
-│       ├── App.vue         # Main chat interface
+│       ├── App.vue            # Main app with chat interface
 │       ├── components/
-│       │   ├── ChatMessage.vue    # Message bubble component
-│       │   ├── TextInput.vue      # Text input with send button
-│       │   ├── VoiceInput.vue     # Voice recording button
-│       │   └── ReportModal.vue    # Student Report Card modal
+│       │   ├── ChatMessage.vue     # Message bubble
+│       │   ├── TextInput.vue       # Text input
+│       │   ├── VoiceInput.vue      # Voice recording (Whisper)
+│       │   └── ReportModal.vue     # Report card modal
+│       ├── views/
+│       │   └── AdminPanel.vue      # Admin dashboard
 │       └── services/
-│           ├── api.js             # Backend API client
-│           └── speechRecognition.js # Web Speech API wrapper
+│           └── api.js              # Backend API client
 │
 ├── README.md
 └── .gitignore
 ```
 
-## Technologies Used
+---
+
+## 🛠️ Technologies Used
 
 ### Backend
-- Node.js + Express
-- sql.js (SQLite in JavaScript)
-- OpenAI API (GPT-3.5-turbo)
+- **Node.js + Express** - Server framework
+- **sql.js** - SQLite database (pure JavaScript)
+- **OpenAI API** - GPT-4 for chat, Whisper for transcription
+- **PDFKit** - PDF generation
 
 ### Frontend
-- Vue.js 3 (Composition API)
-- Vite
-- Axios
-- Web Speech API
+- **Vue.js 3** - Composition API
+- **Vite** - Build tool
+- **Axios** - HTTP client
+- **Web Speech API** - Text-to-speech for AI responses
 
-## Browser Support
+---
 
-Voice input uses the Web Speech API:
-- ✅ Chrome (recommended)
-- ✅ Edge
-- ⚠️ Safari (partial support)
-- ❌ Firefox (not supported)
+## 🌐 Browser Support
 
-## License
+| Feature | Chrome | Edge | Safari | Firefox |
+|---------|--------|------|--------|---------|
+| Voice Input (Whisper) | ✅ | ✅ | ✅ | ✅ |
+| Text-to-Speech | ✅ | ✅ | ✅ | ✅ |
+| Full Support | ✅ | ✅ | ✅ | ✅ |
+
+*Voice input now uses OpenAI Whisper API (server-side), so it works in all browsers!*
+
+---
+
+## 📄 License
 
 MIT
