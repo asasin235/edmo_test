@@ -33,13 +33,21 @@ const selectedStudent = ref(null);
 const studentReport = ref(null);
 const reportLoading = ref(false);
 
-// Check if there's a saved session
-onMounted(() => {
+// Check if there's a saved session and validate it
+onMounted(async () => {
   const savedPassword = sessionStorage.getItem('adminPassword');
   if (savedPassword) {
-    adminPassword.value = savedPassword;
-    isAuthenticated.value = true;
-    loadData();
+    // Verify the saved password is still valid
+    try {
+      await adminLogin(savedPassword);
+      adminPassword.value = savedPassword;
+      isAuthenticated.value = true;
+      loadData();
+    } catch (err) {
+      // Saved password is invalid, clear it
+      sessionStorage.removeItem('adminPassword');
+      isAuthenticated.value = false;
+    }
   }
 });
 
