@@ -44,6 +44,60 @@ const userEmail = ref('');
 const userName = ref('');
 const isReturningUser = ref(false);
 
+// Text-to-speech state
+const isMuted = ref(false);
+const isSpeaking = ref(false);
+
+// Text-to-speech function
+function speakText(text) {
+  if (isMuted.value || !text) return;
+  
+  // Cancel any ongoing speech
+  window.speechSynthesis.cancel();
+  
+  // Clean text for speech (remove emojis, markdown, etc.)
+  const cleanText = text
+    .replace(/[\u{1F300}-\u{1F9FF}]/gu, '') // Remove emojis
+    .replace(/[*_#`]/g, '') // Remove markdown
+    .replace(/\n+/g, '. ') // Replace newlines with pauses
+    .trim();
+  
+  if (!cleanText) return;
+  
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  utterance.rate = 1.0;
+  utterance.pitch = 1.0;
+  utterance.volume = 1.0;
+  
+  // Try to use a good English voice
+  const voices = window.speechSynthesis.getVoices();
+  const englishVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Female')) 
+    || voices.find(v => v.lang.startsWith('en'))
+    || voices[0];
+  if (englishVoice) {
+    utterance.voice = englishVoice;
+  }
+  
+  utterance.onstart = () => { isSpeaking.value = true; };
+  utterance.onend = () => { isSpeaking.value = false; };
+  utterance.onerror = () => { isSpeaking.value = false; };
+  
+  window.speechSynthesis.speak(utterance);
+}
+
+function toggleMute() {
+  isMuted.value = !isMuted.value;
+  if (isMuted.value) {
+    window.speechSynthesis.cancel();
+    isSpeaking.value = false;
+  }
+}
+
+function stopSpeaking() {
+  window.speechSynthesis.cancel();
+  isSpeaking.value = false;
+}
+
 // State
 const messages = ref([]);
 const inputText = ref('');
@@ -140,6 +194,11 @@ function addWelcomeMessage(isReturning, name) {
     content: welcomeContent,
     timestamp: new Date().toISOString()
   }];
+  
+  // Speak the welcome message after a short delay
+  setTimeout(() => {
+    speakText(welcomeContent);
+  }, 500);
 }
 
 // Logout / Change email
@@ -214,6 +273,9 @@ async function sendMessage() {
       content: response.response,
       timestamp: response.timestamp
     });
+    
+    // Speak the AI response
+    speakText(response.response);
     
     scrollToBottom();
   } catch (err) {
@@ -474,6 +536,42 @@ const progressPercentage = computed(() => {
           placeholder="Type your message..."
           @send="sendMessage"
         />
+      </div>
+      
+      <!-- Audio Controls -->
+      <div class="audio-controls">
+        <button 
+          class="mute-btn" 
+          :class="{ muted: isMuted, speaking: isSpeaking }"
+          @click="toggleMute"
+          :title="isMuted ? 'Unmute AI Voice' : 'Mute AI Voice'"
+        >
+          <!-- Speaker icon when unmuted -->
+          <svg v-if="!isMuted" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          </svg>
+          <!-- Muted icon -->
+          <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <line x1="22" x2="16" y1="9" y2="15"/>
+            <line x1="16" x2="22" y1="9" y2="15"/>
+          </svg>
+          <span>{{ isMuted ? 'Unmute' : 'AI Voice' }}</span>
+        </button>
+        
+        <button 
+          v-if="isSpeaking" 
+          class="stop-btn"
+          @click="stopSpeaking"
+          title="Stop Speaking"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="6" width="12" height="12" rx="2"/>
+          </svg>
+          <span>Stop</span>
+        </button>
       </div>
     </div>
     
@@ -808,6 +906,77 @@ body {
   padding: 16px 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(15, 23, 42, 0.5);
+}
+
+/* Audio Controls */
+.audio-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 24px 16px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.mute-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 20px;
+  color: #a5b4fc;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mute-btn:hover {
+  background: rgba(99, 102, 241, 0.25);
+  color: #c7d2fe;
+}
+
+.mute-btn.speaking {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #86efac;
+  animation: pulse 1.5s infinite;
+}
+
+.mute-btn.muted {
+  background: rgba(100, 116, 139, 0.15);
+  border-color: rgba(100, 116, 139, 0.3);
+  color: #94a3b8;
+}
+
+.mute-btn.muted:hover {
+  background: rgba(100, 116, 139, 0.25);
+  color: #cbd5e1;
+}
+
+.stop-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 20px;
+  color: #fca5a5;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stop-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fecaca;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 @media (max-width: 600px) {
