@@ -1,9 +1,71 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
-const { userOperations, conversationOperations, messageOperations } = require('../database');
+const { userOperations, conversationOperations, messageOperations, settingsOperations } = require('../database');
 const { generateChatResponse } = require('../services/openai');
 
 const router = express.Router();
+
+/**
+ * POST /api/chat/start
+ * Start a chat session with email identification
+ * 
+ * Request body:
+ * {
+ *   email: string
+ * }
+ * 
+ * Response:
+ * {
+ *   userId: string,
+ *   email: string,
+ *   name: string | null,
+ *   isNewUser: boolean,
+ *   questionCount: number
+ * }
+ */
+router.post('/start', (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        error: 'Missing required field',
+        details: 'email is required'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        error: 'Invalid email',
+        details: 'Please provide a valid email address'
+      });
+    }
+
+    // Get or create user by email
+    const { user, isNew } = userOperations.createByEmail(email.toLowerCase().trim());
+
+    // Get question count from settings
+    const questionCountSetting = settingsOperations.get('question_count');
+    const questionCount = parseInt(questionCountSetting) || 8;
+
+    res.json({
+      userId: user.user_id,
+      email: user.email,
+      name: user.name,
+      isNewUser: isNew,
+      questionCount
+    });
+
+  } catch (error) {
+    console.error('Start session error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      details: error.message
+    });
+  }
+});
 
 /**
  * POST /api/chat
@@ -20,7 +82,8 @@ const router = express.Router();
  * {
  *   response: string,
  *   conversationId: string,
- *   timestamp: string
+ *   timestamp: string,
+ *   questionProgress: { current: number, total: number }
  * }
  */
 router.post('/', async (req, res) => {
@@ -35,18 +98,28 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Ensure user exists
-    userOperations.create.run(userId);
+    // Get question count from settings
+    const questionCountSetting = settingsOperations.get('question_count');
+    const questionCount = parseInt(questionCountSetting) || 8;
+
+    // Verify user exists
+    const user = userOperations.get(userId);
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found',
+        details: 'Please start a session first'
+      });
+    }
 
     let activeConversationId = conversationId;
 
     // Create new conversation if not provided
     if (!activeConversationId) {
       activeConversationId = uuidv4();
-      conversationOperations.create.run(activeConversationId, userId);
+      conversationOperations.create(activeConversationId, userId);
     } else {
       // Verify conversation exists and belongs to user
-      const conversation = conversationOperations.get.get(activeConversationId);
+      const conversation = conversationOperations.get(activeConversationId);
       if (!conversation) {
         return res.status(404).json({
           error: 'Conversation not found',
@@ -62,27 +135,49 @@ router.post('/', async (req, res) => {
     }
 
     // Get conversation history (last 20 messages for context)
-    const recentMessages = messageOperations.getRecentByConversation
-      .all(activeConversationId, 20)
-      .reverse(); // Reverse to get chronological order
+    const recentMessages = messageOperations.getRecentByConversation(activeConversationId, 20);
+    
+    // Count user messages (questions answered) - add 1 for current message
+    const userMessageCount = recentMessages.filter(m => m.role === 'user').length + 1;
 
-    // Generate AI response
-    const aiResponse = await generateChatResponse(recentMessages, message);
+    // Generate AI response with question count context
+    const aiResponse = await generateChatResponse(recentMessages, message, questionCount, userMessageCount);
 
     // Store user message
     const userMessageId = uuidv4();
-    messageOperations.create.run(userMessageId, activeConversationId, 'user', message);
+    messageOperations.create(userMessageId, activeConversationId, 'user', message);
 
     // Store AI response
     const aiMessageId = uuidv4();
-    messageOperations.create.run(aiMessageId, activeConversationId, 'assistant', aiResponse);
+    messageOperations.create(aiMessageId, activeConversationId, 'assistant', aiResponse);
+
+    // Try to extract name from the message if this is early in the conversation
+    if (userMessageCount <= 2 && !user.name) {
+      // Simple heuristic to extract name
+      const namePatterns = [
+        /(?:my name is|i'm|i am|call me)\s+([A-Za-z]+)/i,
+        /^([A-Za-z]+)$/i  // If they just respond with a single word, it might be their name
+      ];
+      
+      for (const pattern of namePatterns) {
+        const match = message.match(pattern);
+        if (match && match[1] && match[1].length > 1) {
+          userOperations.updateName(userId, match[1]);
+          break;
+        }
+      }
+    }
 
     const timestamp = new Date().toISOString();
 
     res.json({
       response: aiResponse,
       conversationId: activeConversationId,
-      timestamp: timestamp
+      timestamp: timestamp,
+      questionProgress: {
+        current: userMessageCount,
+        total: questionCount
+      }
     });
 
   } catch (error) {
@@ -102,14 +197,14 @@ router.get('/history/:conversationId', (req, res) => {
   try {
     const { conversationId } = req.params;
     
-    const conversation = conversationOperations.get.get(conversationId);
+    const conversation = conversationOperations.get(conversationId);
     if (!conversation) {
       return res.status(404).json({
         error: 'Conversation not found'
       });
     }
 
-    const messages = messageOperations.getByConversation.all(conversationId);
+    const messages = messageOperations.getByConversation(conversationId);
 
     res.json({
       conversationId,
@@ -133,4 +228,3 @@ router.get('/history/:conversationId', (req, res) => {
 });
 
 module.exports = router;
-

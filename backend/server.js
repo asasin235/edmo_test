@@ -5,6 +5,8 @@ const cors = require('cors');
 const { initializeDatabase } = require('./database');
 const chatRoutes = require('./routes/chat');
 const reportRoutes = require('./routes/report');
+const transcribeRoutes = require('./routes/transcribe');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,7 +16,9 @@ app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
   credentials: true
 }));
-app.use(express.json());
+
+// Increase body size limit for audio uploads (10MB)
+app.use(express.json({ limit: '10mb' }));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -30,6 +34,8 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/chat', chatRoutes);
 app.use('/api/report', reportRoutes);
+app.use('/api/transcribe', transcribeRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -52,6 +58,8 @@ async function startServer() {
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
       console.log(`💬 Chat API: POST http://localhost:${PORT}/api/chat`);
       console.log(`📋 Report API: GET http://localhost:${PORT}/api/report/:userId`);
+      console.log(`🎤 Transcribe API: POST http://localhost:${PORT}/api/transcribe`);
+      console.log(`👨‍💼 Admin API: http://localhost:${PORT}/api/admin`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

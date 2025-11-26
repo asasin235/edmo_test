@@ -62,13 +62,16 @@ class SpeechRecognitionService {
             message = 'No microphone was found or access was denied.';
             break;
           case 'not-allowed':
-            message = 'Microphone access was denied. Please allow microphone access.';
+            message = 'Microphone access was denied. Please allow microphone access in your browser settings.';
             break;
           case 'network':
-            message = 'A network error occurred.';
+            message = 'Network error: Speech recognition requires internet connection. Please check your connection and try again.';
             break;
           case 'aborted':
             message = 'Speech recognition was aborted.';
+            break;
+          case 'service-not-allowed':
+            message = 'Speech recognition service is not allowed. Please use Chrome browser.';
             break;
         }
         

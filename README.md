@@ -1,14 +1,21 @@
-# AI Conversation System
+# Student Profile Assistant
 
-A full-stack AI conversation system with voice and text input, built with Vue.js frontend and Node.js/Express backend. Features OpenAI-powered conversations with context persistence and comprehensive user reporting.
+An AI-powered student interview system that collects student information through conversational interviews and generates comprehensive report cards. Built with Vue.js frontend and Node.js/Express backend, featuring voice and text input capabilities.
 
 ## Features
 
-- **Voice Input**: Browser-based speech recognition using Web Speech API
-- **Text Input**: Standard text messaging with real-time AI responses
-- **Context Persistence**: Conversations are stored in SQLite and context is maintained across messages
-- **User Reports**: Consolidated reports with conversation history and AI-generated summaries
-- **Modern UI**: Beautiful, responsive chat interface with dark theme
+- **Voice Input**: Speak your responses using the microphone button - transcription appears in the text box for review before sending
+- **Text Input**: Type your responses with real-time AI interaction
+- **Smart Interview Flow**: AI asks structured questions about education, personality, interests, learning style, and goals
+- **Student Report Card**: Generates a detailed report card with:
+  - Student profile (name, education, institution)
+  - Personality insights
+  - Learning profile and style
+  - Strengths and growth areas
+  - Interests and hobbies
+  - Short-term and long-term goals
+  - Personalized recommendations
+- **Context Persistence**: All conversations are stored and context is maintained
 
 ## Architecture
 
@@ -17,9 +24,9 @@ A full-stack AI conversation system with voice and text input, built with Vue.js
 │   Vue.js Frontend   │────▶│  Express Backend    │
 │                     │     │                     │
 │  - Voice Input      │     │  - Chat API         │
-│  - Text Input       │     │  - Report API       │
-│  - Chat Display     │     │  - OpenAI Service   │
-│  - Report Modal     │     │  - SQLite Database  │
+│  - Text Input       │     │  - Report Card API  │
+│  - Chat Interface   │     │  - OpenAI Service   │
+│  - Report Card UI   │     │  - SQLite Database  │
 └─────────────────────┘     └─────────────────────┘
 ```
 
@@ -30,14 +37,14 @@ A full-stack AI conversation system with voice and text input, built with Vue.js
 
 ## Quick Start
 
-### 1. Clone and Setup Backend
+### 1. Setup Backend
 
 ```bash
 cd backend
 
 # Copy environment file and add your OpenAI API key
 cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
+# Edit .env and replace 'your_openai_api_key_here' with your actual key
 
 # Install dependencies
 npm install
@@ -64,7 +71,34 @@ The frontend will start on `http://localhost:5173`
 
 ### 3. Open the Application
 
-Navigate to `http://localhost:5173` in your browser (Chrome recommended for voice support).
+Navigate to `http://localhost:5173` in Chrome (recommended for voice support).
+
+## How It Works
+
+### Interview Flow
+
+The AI conducts a friendly, conversational interview covering:
+
+1. **Basic Information**: Name, age, education level, school/college
+2. **Academic Profile**: Favorite subjects, challenging subjects, academic goals
+3. **Personality & Interests**: Hobbies, extracurricular activities, strengths
+4. **Learning Style**: Study preferences, ideal environment, time management
+5. **Goals & Aspirations**: Short-term goals, long-term dreams, career aspirations
+
+### Voice Input
+
+1. Click the microphone button to start recording
+2. Speak your response
+3. The transcription appears in the text box
+4. Review/edit if needed, then click send
+
+### Report Card Generation
+
+Click "Report Card" to generate a comprehensive student profile including:
+- Personality insights extracted from the conversation
+- Learning style analysis
+- Identified strengths and growth areas
+- Personalized recommendations based on the student's profile
 
 ## API Documentation
 
@@ -76,7 +110,7 @@ Send a message and receive an AI response.
 ```json
 {
   "userId": "user-123",
-  "message": "Hello, how are you?",
+  "message": "My name is John",
   "conversationId": "optional-conversation-id"
 }
 ```
@@ -84,74 +118,51 @@ Send a message and receive an AI response.
 **Response:**
 ```json
 {
-  "response": "Hello! I'm doing great, thank you for asking. How can I help you today?",
+  "response": "Nice to meet you, John! What grade or year are you currently in?",
   "conversationId": "conv-abc123",
   "timestamp": "2024-01-15T10:30:00.000Z"
 }
 ```
 
-### GET /api/chat/history/:conversationId
-
-Get the full history of a conversation.
-
-**Response:**
-```json
-{
-  "conversationId": "conv-abc123",
-  "userId": "user-123",
-  "startedAt": "2024-01-15T10:00:00.000Z",
-  "messages": [
-    {
-      "id": "msg-1",
-      "role": "user",
-      "content": "Hello!",
-      "timestamp": "2024-01-15T10:00:01.000Z"
-    },
-    {
-      "id": "msg-2",
-      "role": "assistant",
-      "content": "Hello! How can I help you?",
-      "timestamp": "2024-01-15T10:00:02.000Z"
-    }
-  ]
-}
-```
-
 ### GET /api/report/:userId
 
-Get a comprehensive user report with all conversations and an AI-generated summary.
+Get a comprehensive student report card.
 
 **Response:**
 ```json
 {
   "userId": "user-123",
-  "userCreatedAt": "2024-01-15T09:00:00.000Z",
-  "conversations": [
-    {
-      "conversationId": "conv-abc123",
-      "startedAt": "2024-01-15T10:00:00.000Z",
-      "endedAt": null,
-      "messageCount": 10,
-      "messages": [...]
-    }
-  ],
-  "totalConversations": 1,
-  "totalMessages": 10,
-  "aiSummary": "The user engaged in a productive conversation about...",
-  "generatedAt": "2024-01-15T11:00:00.000Z"
-}
-```
-
-### GET /api/report/:userId/summary
-
-Get only the AI summary without full conversation history.
-
-**Response:**
-```json
-{
-  "userId": "user-123",
-  "totalMessages": 10,
-  "aiSummary": "The user engaged in a productive conversation about...",
+  "reportCard": {
+    "studentProfile": {
+      "name": "John",
+      "age": "16",
+      "educationLevel": "High School",
+      "institution": "Lincoln High",
+      "favoriteSubjects": ["Math", "Science"],
+      "challengingSubjects": ["History"]
+    },
+    "personalityInsights": ["Curious and eager to learn", "Strong analytical thinking"],
+    "learningProfile": {
+      "preferredStyle": "Visual",
+      "studyPreferences": "Prefers quiet environment with notes",
+      "idealEnvironment": "Library or quiet room"
+    },
+    "strengths": ["Problem-solving", "Mathematics"],
+    "growthAreas": ["Public speaking", "Time management"],
+    "interests": ["Gaming", "Robotics"],
+    "goals": {
+      "shortTerm": "Improve grades in History",
+      "longTerm": "Become a software engineer",
+      "careerAspiration": "Work at a tech company"
+    },
+    "recommendations": [
+      "Consider joining the robotics club",
+      "Try visual learning tools for History"
+    ],
+    "overallSummary": "John is a bright student with strong STEM abilities..."
+  },
+  "conversations": [...],
+  "totalMessages": 24,
   "generatedAt": "2024-01-15T11:00:00.000Z"
 }
 ```
@@ -159,14 +170,6 @@ Get only the AI summary without full conversation history.
 ### GET /health
 
 Health check endpoint.
-
-**Response:**
-```json
-{
-  "status": "ok",
-  "timestamp": "2024-01-15T10:00:00.000Z"
-}
-```
 
 ## Environment Variables
 
@@ -189,22 +192,20 @@ edmo_project/
 │   ├── .env.example
 │   ├── routes/
 │   │   ├── chat.js         # Chat API endpoints
-│   │   └── report.js       # Report API endpoints
+│   │   └── report.js       # Report Card API endpoints
 │   └── services/
-│       └── openai.js       # OpenAI integration
+│       └── openai.js       # OpenAI integration with interview prompts
 │
 ├── frontend/
 │   ├── index.html
 │   ├── package.json
-│   ├── vite.config.js
 │   └── src/
-│       ├── App.vue         # Main application component
-│       ├── main.js
+│       ├── App.vue         # Main chat interface
 │       ├── components/
 │       │   ├── ChatMessage.vue    # Message bubble component
 │       │   ├── TextInput.vue      # Text input with send button
 │       │   ├── VoiceInput.vue     # Voice recording button
-│       │   └── ReportModal.vue    # Report display modal
+│       │   └── ReportModal.vue    # Student Report Card modal
 │       └── services/
 │           ├── api.js             # Backend API client
 │           └── speechRecognition.js # Web Speech API wrapper
@@ -213,69 +214,27 @@ edmo_project/
 └── .gitignore
 ```
 
-## Voice Input Support
-
-Voice input uses the Web Speech API which is supported in:
-- Chrome (recommended)
-- Edge
-- Safari (partial support)
-
-Firefox does not support the Web Speech API for speech recognition.
-
 ## Technologies Used
 
 ### Backend
 - Node.js + Express
 - sql.js (SQLite in JavaScript)
 - OpenAI API (GPT-3.5-turbo)
-- UUID for ID generation
 
 ### Frontend
 - Vue.js 3 (Composition API)
 - Vite
-- Axios for HTTP requests
-- Web Speech API for voice input
+- Axios
+- Web Speech API
 
-## Development
+## Browser Support
 
-### Running in Development Mode
-
-**Backend:**
-```bash
-cd backend
-npm run dev  # Uses Node.js --watch for auto-reload
-```
-
-**Frontend:**
-```bash
-cd frontend
-npm run dev  # Vite dev server with HMR
-```
-
-### Building for Production
-
-```bash
-cd frontend
-npm run build
-```
-
-The production build will be in `frontend/dist/`.
-
-## Troubleshooting
-
-### "Microphone access denied"
-- Ensure you're using HTTPS or localhost
-- Check browser permissions for microphone access
-
-### "Speech recognition not supported"
-- Use Chrome or Edge browser
-- Make sure you're not in incognito mode
-
-### Backend connection errors
-- Ensure backend is running on port 3000
-- Check CORS settings if using a different port
+Voice input uses the Web Speech API:
+- ✅ Chrome (recommended)
+- ✅ Edge
+- ⚠️ Safari (partial support)
+- ❌ Firefox (not supported)
 
 ## License
 
 MIT
-
