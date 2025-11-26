@@ -1,0 +1,21 @@
+{
+  "name": "ai-conversation-backend",
+  "version": "1.0.0",
+  "description": "Backend API for AI conversation system with OpenAI integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "openai": "^4.28.0",
+    "sql.js": "^1.10.3",
+    "uuid": "^9.0.1"
+  },
+  "keywords": ["ai", "conversation", "openai", "express"],
+  "author": "",
+  "license": "MIT"
+}
